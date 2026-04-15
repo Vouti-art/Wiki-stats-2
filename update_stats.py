@@ -4,49 +4,63 @@ import matplotlib.pyplot as plt
 from datetime import datetime
 import os
 
-# 1. Hae tiedot wikistä
-API_URL = "https://wiki.isosten.net/api.php?action=query&meta=siteinfo&siprop=statistics&format=json"
-data = requests.get(API_URL).json()
-stats = data['query']['statistics']
-today = datetime.now().strftime("%Y-%m-%d")
-
-# 2. Päivitä CSV-tiedosto
+# 1. Määritellään tiedostot ja asetukset
 csv_file = 'stats.csv'
-new_data = pd.DataFrame([{
+img_file = 'stats.png'
+api_url = "https://wiki.isosten.net/api.php?action=query&meta=siteinfo&siprop=statistics&format=json"
+
+# 2. Haetaan tuoreimmat tiedot wikistä
+try:
+    response = requests.get(api_url, timeout=10)
+    response.raise_for_status()
+    data = response.json()
+    stats = data['query']['statistics']
+except Exception as e:
+    print(f"Virhe haettaessa tietoja API:sta: {e}")
+    exit(1)
+
+today = datetime.now().strftime("%Y-%m-%d")
+new_entry = {
     'date': today,
     'pages': stats['pages'],
     'edits': stats['edits'],
     'users': stats['users']
-}])
+}
 
+# 3. Luetaan vanha historia tai luodaan uusi, jos tiedosto puuttuu tai on tyhjä
 if os.path.exists(csv_file) and os.path.getsize(csv_file) > 0:
     try:
         df = pd.read_csv(csv_file)
-    except pd.errors.EmptyDataError:
+    except Exception:
+        # Jos luku epäonnistuu (esim. korruptoitunut tiedosto), aloitetaan alusta
         df = pd.DataFrame(columns=['date', 'pages', 'edits', 'users'])
 else:
-    # Jos tiedostoa ei ole tai se on tyhjä, luodaan uusi DataFrame sarakkeilla
     df = pd.DataFrame(columns=['date', 'pages', 'edits', 'users'])
-    # Lisätään uusi rivi vain jos tälle päivälle ei vielä ole tietoa
-    if today not in df['date'].values:
-        df = pd.concat([df, new_data], ignore_index=True)
+
+# 4. Lisätään uusi rivi vain, jos tälle päivälle ei vielä ole merkintää
+if today not in df['date'].values:
+    df = pd.concat([df, pd.DataFrame([new_entry])], ignore_index=True)
+    df.to_csv(csv_file, index=False)
+    print(f"Päivitetty tilastot päivälle {today}")
 else:
-    df = new_data
+    print("Tämän päivän tilastot ovat jo tallennettu.")
 
-df.to_csv(csv_file, index=False)
+# 5. Luodaan graafi
+if len(df) > 0:
+    plt.figure(figsize=(10, 6))
+    
+    # Piirretään viivat (käytetään kakkosakselia, jos luvuissa on suuri ero)
+    plt.plot(df['date'], df['pages'], marker='o', linestyle='-', color='blue', label='Sivuja')
+    plt.plot(df['date'], df['users'], marker='s', linestyle='--', color='green', label='Käyttäjiä')
 
-# 3. Luodaan graafi
-plt.figure(figsize=(10, 6))
-plt.plot(df['date'], df['pages'], marker='o', label='Sivuja')
-plt.plot(df['date'], df['users'], marker='s', label='Käyttäjiä')
+    plt.title('Wiki.isosten.net kasvu', fontsize=14)
+    plt.xlabel('Päivämäärä')
+    plt.ylabel('Määrä')
+    plt.xticks(rotation=45)
+    plt.legend()
+    plt.grid(True, linestyle=':', alpha=0.6)
+    plt.tight_layout()
 
-plt.title('Wiki.isosten.net kasvu')
-plt.xlabel('Päivämäärä')
-plt.ylabel('Määrä')
-plt.xticks(rotation=45)
-plt.legend()
-plt.grid(True, linestyle='--', alpha=0.7)
-plt.tight_layout()
-
-# Tallennetaan kuvatiedostona
-plt.savefig('stats.png')
+    # Tallennetaan kuva
+    plt.savefig(img_file)
+    print("Graafi päivitetty.")
