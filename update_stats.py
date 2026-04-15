@@ -19,8 +19,14 @@ new_data = pd.DataFrame([{
     'users': stats['users']
 }])
 
-if os.path.exists(csv_file):
-    df = pd.read_csv(csv_file)
+if os.path.exists(csv_file) and os.path.getsize(csv_file) > 0:
+    try:
+        df = pd.read_csv(csv_file)
+    except pd.errors.EmptyDataError:
+        df = pd.DataFrame(columns=['date', 'pages', 'edits', 'users'])
+else:
+    # Jos tiedostoa ei ole tai se on tyhjä, luodaan uusi DataFrame sarakkeilla
+    df = pd.DataFrame(columns=['date', 'pages', 'edits', 'users'])
     # Lisätään uusi rivi vain jos tälle päivälle ei vielä ole tietoa
     if today not in df['date'].values:
         df = pd.concat([df, new_data], ignore_index=True)
