@@ -1,0 +1,31 @@
+name: Wiki Stats Bot
+
+on:
+  schedule:
+    - cron: '0 12 * * *' # Automaattinen ajo kerran päivässä
+  workflow_dispatch:      # Tämä lisää "Run workflow" -napin testailua varten
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Asenna Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Asenna kirjastot
+        run: pip install requests pandas matplotlib
+
+      - name: Aja skripti
+        run: python update_stats.py
+
+      - name: Tallenna muutokset
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git add stats.csv stats.png
+          git commit -m "Tilastot päivitetty" || exit 0
+          git push
