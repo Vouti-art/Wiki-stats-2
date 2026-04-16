@@ -2,8 +2,9 @@ name: Wiki Stats Bot
 
 on:
   schedule:
-    - cron: '0 12 * * *' # Automaattinen ajo kerran päivässä
-  workflow_dispatch:      # Tämä lisää "Run workflow" -napin testailua varten
+    # Asetetaan ajaksi klo 21:42 UTC, joka on 00:42 Suomen kesäaikaa
+    - cron: '42 15 * * *'
+  workflow_dispatch: # Pidetään tämä, jotta voit aina testata napista
 
 jobs:
   build:
