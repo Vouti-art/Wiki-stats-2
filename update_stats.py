@@ -52,6 +52,7 @@ if len(df) > 0:
     # Piirretään viivat (käytetään kakkosakselia, jos luvuissa on suuri ero)
     plt.plot(df['date'], df['pages'], marker='o', linestyle='-', color='blue', label='Sivuja')
     plt.plot(df['date'], df['users'], marker='s', linestyle='--', color='green', label='Käyttäjiä')
+    plt.plot(df['date'], df['edits'], marker='t', linestyle='---', color='red', label='Muokkauksia')
 
     plt.title('Wiki.isosten.net kasvu', fontsize=14)
     plt.xlabel('Päivämäärä')
