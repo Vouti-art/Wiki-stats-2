@@ -15,7 +15,7 @@ jobs:
       - name: Asenna Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.9'
+          python-version: '3.10'
 
       - name: Asenna kirjastot
         run: pip install requests pandas matplotlib
